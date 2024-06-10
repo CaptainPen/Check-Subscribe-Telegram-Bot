@@ -2,64 +2,48 @@ require('dotenv').config();
 const {
     Bot,
     GrammyError,
-    HttpError,
-    InlineKeyboard
+    HttpError
 } = require('grammy');
 const { hydrate } = require('@grammyjs/hydrate');
+const { menuKeyboard } = require('./utils/keyboards');
+const { botCommands } = require('./utils/const');
+
+const {
+    buttonMenuHandler,
+    buttonCheckSubscriptionHandler,
+    buttonAccessHandler,
+    buttonInfoHandler
+} = require('./utils/buttonHandlers');
 
 const bot = new Bot(process.env.BOT_API_KEY);
 bot.use(hydrate());
 
-bot.api.setMyCommands([{
-    command: 'start', description: 'Запуск бота',
-}]);
-
-const menuInlineKeyboard = new InlineKeyboard()
-    .url('🔗 Инвайт Blum', 't.me/BlumCryptoBot/app?startapp=ref_IofPLNpBXe').row()
-    .text('🔑 Доступ в чат', 'button-access').row()
-    .text('📄 Информация о боте', 'button-info').row();
-
-const accessInlineKeyboard = new InlineKeyboard()
-    .url('💎 Официальный канал Blum', 'https://t.me/blumcrypto').row()
-    .text('🔄 Проверить подписку', 'button-aaa').row()
-    .text('⬅️ Назад', 'button-menu').row();
-
-const infoInlineKeyboard = new InlineKeyboard().text('⬅️ Назад', 'button-menu');
+bot.api.setMyCommands(botCommands);
 
 bot.command('start', async (ctx) => {
-    await ctx.reply('👋 \n Приветствую\\! Интересуешься криптовалютой и хочешь быть частью нашего сообщества? Тогда я помогу тебе, выбери сам что тебя интересует\\.', {
+    await ctx.reply('👋\n' +
+        '\n' +
+        'Приветствую\\! Я \\- CryptoBot, твой проводник в мир криптовалюты\\.\n' +
+        '\n' +
+        'Интересуешься криптовалютой и хочешь быть частью нашего сообщества? Тогда я помогу тебе\\.', {
         parse_mode: 'MarkdownV2',
     });
     await ctx.reply('Теперь тебе нужно выбрать действие:', {
-        reply_markup: menuInlineKeyboard
+        reply_markup: menuKeyboard
     });
     await ctx.answerCallbackQuery();
 });
+
+bot.callbackQuery('button-menu', buttonMenuHandler);
+
+bot.callbackQuery('button-access', buttonAccessHandler);
+
+bot.callbackQuery('button-checkSubscription', buttonCheckSubscriptionHandler);
+
+bot.callbackQuery('button-info', buttonInfoHandler);
 
 bot.on('message', async (ctx) => {
-    await ctx.reply('Надо подумать...');
-});
-
-bot.callbackQuery('button-access', async (ctx) => {
-    await ctx.callbackQuery.message.editText('Доступ в чат может получить любой подписчик нашего канала:', {
-        reply_markup: accessInlineKeyboard
-    });
-    await ctx.answerCallbackQuery();
-});
-
-bot.callbackQuery('button-info', async (ctx) => {
-    await ctx.callbackQuery.message.editText('Главная задача бота - предоставление доступа к чатам и каналам. Он не имеет цели оскорбить кого-либо и несет только развлекательный характер, все материалы взяты из открытого доступа в интернете и использованы в допустимых формах. Автор не несет никакой ответственности за переставленный материал. Присутствует мат.', {
-        reply_markup: infoInlineKeyboard
-    });
-    await ctx.answerCallbackQuery();
-});
-
-bot.callbackQuery('button-menu', async (ctx) => {
-    await ctx.callbackQuery.message.editText('Теперь тебе нужно выбрать действие:', {
-        reply_markup: menuInlineKeyboard,
-        parse_mode: 'MarkdownV2'
-    });
-    await ctx.answerCallbackQuery();
+    await ctx.deleteMessage(ctx.message_id);
 });
 
 bot.catch((err) => {
